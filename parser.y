@@ -1,50 +1,67 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-void yyerror(const char *s);
 int yylex(void);
+void yyerror(const char *s);
 
+extern FILE *yyin;
+
+double total_global = 0.0;
 %}
 
 %union {
-    int   num;
-    char *str;
+    char  *str;
+    double num;
 }
 
-/* tokens */
-%token EMPLEADO
-%token <str> STRING
-%token <num> NUMERO
+/* tokens que vienen del lexer */
+%token EMPLEADO SALARIO PUNTOCOMA NEWLINE
+%token <str> ID
+%token <num> NUM
+%token UNKNOWN
 
-%type  <num> expresion
+%type  <num> linea definicion
 
 %%
 
-input
-    : /* vacío */
+input:
+      /* vacío */
     | input linea
     ;
 
-linea
-    : EMPLEADO '(' STRING ',' expresion ')' ';'
-      {
-          printf("Empleado %s -> salario neto = %d\n", $3, $5);
-          free($3);
-      }
+linea:
+      definicion NEWLINE
+    | NEWLINE
     ;
 
-expresion
-    : NUMERO
-      { $$ = $1; }
-    | expresion '+' NUMERO
-      { $$ = $1 + $3; }
-    | expresion '-' NUMERO
-      { $$ = $1 - $3; }
+definicion:
+      EMPLEADO ID SALARIO NUM PUNTOCOMA
+    {
+        printf("Empleado %-10s -> salario: %.2f\n", $2, $4);
+        total_global += $4;
+        free($2);
+    }
     ;
 
 %%
 
 void yyerror(const char *s) {
     fprintf(stderr, "Error de sintaxis: %s\n", s);
+}
+
+int main(int argc, char **argv) {
+    if (argc > 1) {
+        yyin = fopen(argv[1], "r");
+        if (!yyin) {
+            perror("No se pudo abrir el archivo de entrada");
+            return 1;
+        }
+    }
+
+    yyparse();
+
+    printf("Total global de salarios: %.2f\n", total_global);
+    return 0;
 }
