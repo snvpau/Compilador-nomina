@@ -2,43 +2,27 @@
 #include "y.tab.h"
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 %}
 
 %option noyywrap
 
-DIGITO   [0-9]
-LETRA    [A-Za-zÁÉÍÓÚáéíóúñÑ]
-ID       {LETRA}({LETRA}|{DIGITO}|_)*
+ID      [A-Za-zÁÉÍÓÚáéíóúñÑ]+
+NUM     [0-9]+
 
 %%
 
-empleado                { return EMPLEADO; }
-salario                 { return SALARIO; }
-";"                     { return PUNTOCOMA; }
+"empleado"     { return EMPLEADO; }
+"salario"      { return SALARIO; }
+{ID}           { yylval.str = strdup(yytext); return ID; }
+{NUM}          { yylval.num = atoi(yytext);  return NUM; }
 
-/* identificador de empleado */
-{ID} {
-    yylval.str = strdup(yytext);
-    return ID;
-}
+[ \t\r]+       ;          /* ignorar espacios y tabs */
+\n             { return '\n'; }
+";"            { return ';'; }
 
-/* número (puede ser entero o decimal) */
-{DIGITO}+("."{DIGITO}+)? {
-    yylval.num = atof(yytext);
-    return NUM;
-}
+/* cualquier otro carácter lo ignoramos */
+.              ;
 
-/* espacios y tabs -> se ignoran */
-[ \t\r]+                ;
-
-/* fin de línea -> se lo pasamos al parser */
-\n                      { return NEWLINE; }
-
-/* cualquier otro carácter desconocido */
-. {
-    yylval.str = strdup(yytext);
-    return UNKNOWN;
-}
+%%
 
 %%
